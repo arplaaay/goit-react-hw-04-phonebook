@@ -1,67 +1,83 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
-import { ContactForm } from './ContactForm/ContactForm';
+import ContactForm from './ContactForm/ContactForm';
 import { ContactList } from './ContactList/ContactList';
 import { Filter } from './Filter/Filter';
 import { MainTitle, Subtitle } from './App.styled';
 
-export class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
+export default function App() {
+  // state = {
+  //   contacts: [
+  //     { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+  //     { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+  //     { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+  //     { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+  //   ],
+  //   filter: '',
+  // };
 
-  componentDidMount() {
+  const [contacts, setContacts] = useState([
+    // { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+    // { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+    // { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+    // { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+  ]);
+
+  const [filter, setFilter] = useState('');
+
+  useEffect(() => {
     const localStorageContacts = localStorage.getItem('contacts');
     const parsedContacts = JSON.parse(localStorageContacts);
 
     if (parsedContacts) {
-      this.setState({ contacts: parsedContacts });
+      setContacts(parsedContacts);
     }
-  }
 
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.contacts !== this.state.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
+    // console.log(parsedContacts);
+  }, []);
 
-  checkSameContacts = contact => {
-    return this.state.contacts.find(
+  // useEffect(() => {
+  //   localStorage.setItem('contacts', JSON.stringify(contacts));
+  //   console.log(contacts);
+  // }, [contacts]);
+
+  const checkSameContacts = contact => {
+    return contacts.find(
       item => item.name.toLowerCase() === contact.toLowerCase()
     );
   };
 
-  addContact = data => {
+  const addContact = data => {
     const contact = {
       id: nanoid(),
       name: data.name,
       number: data.number,
     };
 
-    if (this.checkSameContacts(contact.name)) {
+    if (checkSameContacts(contact.name)) {
       alert(`${contact.name} is already in contacts.`);
       return;
     }
 
-    this.setState(prevState => ({
-      contacts: [contact, ...prevState.contacts],
-    }));
+    setContacts(prevState => {
+      const newState = [contact, ...prevState];
+
+      localStorage.setItem('contacts', JSON.stringify(newState));
+
+      return newState;
+    });
   };
 
-  deleteContact = contactId => {
-    this.setState(prevValue => ({
-      contacts: prevValue.contacts.filter(contact => contact.id !== contactId),
-    }));
+  const deleteContact = contactId => {
+    setContacts(prevState => {
+      const newState = prevState.filter(contact => contact.id !== contactId);
+
+      localStorage.setItem('contacts', JSON.stringify(newState));
+      return newState;
+    });
   };
 
-  handleFilter = () => {
-    const { contacts, filter } = this.state;
+  const handleFilter = () => {
     const normalizedFilter = filter.toLowerCase();
 
     return contacts.filter(contact =>
@@ -69,25 +85,27 @@ export class App extends Component {
     );
   };
 
-  changeFilter = e => {
-    this.setState({ filter: e.currentTarget.value });
+  const changeFilter = e => {
+    if (e.currentTarget.value) {
+      setFilter(e.currentTarget.value);
+    } else {
+      setFilter('');
+    }
   };
 
-  render() {
-    const filteredContacts = this.handleFilter();
+  // const filteredContacts = this.handleFilter();
 
-    return (
-      <div>
-        <MainTitle>Phonebook</MainTitle>
-        <ContactForm addContact={this.addContact} />
+  return (
+    <div>
+      <MainTitle>Phonebook</MainTitle>
+      <ContactForm addContact={addContact} />
 
-        <Subtitle>Contacts</Subtitle>
-        <Filter value={this.state.filter} onChange={this.changeFilter} />
-        <ContactList
-          filteredContacts={filteredContacts}
-          deleteContact={this.deleteContact}
-        />
-      </div>
-    );
-  }
+      <Subtitle>Contacts</Subtitle>
+      <Filter value={filter} onChange={changeFilter} />
+      <ContactList
+        filteredContacts={handleFilter()}
+        deleteContact={deleteContact}
+      />
+    </div>
+  );
 }
